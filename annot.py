@@ -10,7 +10,7 @@ import dicom
 tags = ['SliceLocation', 'SeriesNumber', 'SeriesDate',  'SeriesDescription',
     'StudyID', 'PatientID','SeriesInstanceUID','AccessionNumber']
 
-def list_ann(directory):
+def list_ann(directory, annotflag, annotationsfound):
     """
     list_ann : get all DICOM annotation tags from specified directory
     
@@ -27,10 +27,8 @@ def list_ann(directory):
     one for each DICOM image containing an annotation. The annotation
     itself is free text in the 'note' field.
     """
-    path_rootFolder = os.path.dirname(os.path.abspath(__file__))
-        
     allfiles = glob(directory+os.sep+'*')
-    out = open(path_rootFolder+"annotations_log.txt",'a+')
+    out = open("annotations_log.txt",'a+')
     for myfile in allfiles:
         try:
             data = dicom.read_file(myfile)
@@ -41,6 +39,10 @@ def list_ann(directory):
                 print head
                 print "\n##################\n"
                 out.write(str(head)+'\n')
+                annotationsfound.append( str(head) )
+                annotflag = True
         except:
             continue #Not a DICOM file...
     out.close()
+    
+    return annotationsfound, annotflag

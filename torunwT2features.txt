@@ -1,6 +1,16 @@
+####### ERROR
+massM	667	20499	85	20090129	S8000	R	13	R	massM	InsituDuctal ----- mismatch with T2
+massB	736	6041	1297	20090519	S600	L	407	L	massB	BenignTissue --- error in T2 features
+massM	747	8689	1279	20091112	S600	R	297	R	massM	InvasiveDuctal --- error loading 2 sequences as T2
+massM	846	3255	1386	20081110	600	R	359	R	massM	MetaplasticCarcinoma --- error with T2 referemce
+massM	6008	264	1116	20080424	S600	R	178	R	massM	InvasiveDuctal
+nonmassM	672	4893	10456	20090505	800	L	237	L	nonmassM	InsituDuctal ----- mismatch with T2
+massM	782	2713	1327	20081004	700	R	319	R	massM	InvasiveDuctal ----- mismatch with T2
+
+####### DONE
 massM	18	7714	1721	20030205	S44	R	457	R	massM	InvasiveDuctal
 massM	18	7714	1722	20030205	S44	L	457	R	massM	InvasiveDuctal
-nonmassM	59	4614	10665	20011001	S33	R	462	R	nonmassM	InvasiveDuctal
+nonmassM	59	4614	10665	20011001	S33	R	462	R	nonmassM	InvasiveDuctal ----- no t2
 massM	114	20136	1523	20111002	S600	R	419	R	massM	InvasiveDuctal
 nonmassM	114	20136	10570	20111002	S600	R	419	R	nonmassM	InvasiveDuctal
 massB	198	5800	3	20090503	S600	L	236	R	massB	Fibrocystic
@@ -16,8 +26,8 @@ massB	282	4268	1633	20010810	S5	R	436	R	massB	BenignTissue
 massM	7077	7920	1660	20090924	S600	R	442	L	massM	InsituDuctal
 massM	7077	7920	1661	20090924	S600	L	442	L	massM	InsituDuctal
 nonmassM	7077	7920	10624	20090924	S600	L	442	L	nonmassM	InsituDuctal
-massB	299	4401	1669	20010830	S33	R	449	R	massB	BenignTissue
-massB	299	4401	1670	20010830	S33	R	449	R	massB	BenignTissue
+massB	299	4401	1669	20010830	S33	R	449	R	massB	BenignTissue ----- no t2
+massB	299	4401	1670	20010830	S33	R	449	R	massB	BenignTissue ----- no t2
 massB	331	4331	35	20090124	S600	L	4	L	massB	Fibrocystic
 nonmassB	340	5783	10358	20020328	S4	R	157	R	nonmassB	DuctalHyperplasiaWoAtypia
 massM	455	9573	54	20031120	S4	L	8	L	massM	InvasiveDuctal
@@ -30,8 +40,6 @@ nonmassM	556	13769	10064	20060109	S4	L	26	L	nonmassM	InsituDuctal
 massB	651	2290	137	20080907	S600	L	18	L	massB	Fibroadenoma
 massB	663	3222	121	20081107	S600	R	16	R	massB	Fibroadenoma
 massB	667	20499	86	20090129	S8000	L	13	L	massB	Fibroadenoma
-massM	667	20499	85	20090129	S8000	R	13	R	massM	InsituDuctal
-nonmassM	672	4893	10456	20090505	800	L	237	L	nonmassM	InsituDuctal
 massB	673	68	1280	20080403	S600	R	242	R	massB	Fibrocystic
 massM	679	6384	1212	20090612	S700	R	246	R	massM	InvasiveDuctal
 massM	683	10871	1781	20100325	S800	R	470	R	massM	InvasiveDuctal
@@ -53,7 +61,7 @@ massB	710	11884	1246	20100529	S800	L	270	L	massB	Fibroadenoma
 massB	710	11884	1247	20100529	S800	R	270	R	massB	DuctPapilloma
 massM	713	9170	1248	20091211	S800	L	272	L	massM	InvasiveDuctal
 nonmassM	713	9170	10466	20091211	S800	L	272	L	nonmassM	InvasiveDuctal
-nonmassM	713	9170	10467	20091211	S800	L	272	L	nonmassM	InvasiveDuctal
+massM	713	9170	10467	20091211	S800	R	272	R	massM	InvasiveDuctal
 massM	714	12545	1293	20100709	S800	L	302	L	massM	InvasiveDuctal
 massM	714	12545	1294	20100709	S800	L	302	L	massM	InvasiveDuctal
 massM	714	12545	1295	20100709	S800	L	302	L	massM	InvasiveDuctal
@@ -75,8 +83,7 @@ massB	731	11537	1269	20100506	S800	R	288	R	massB	DYSTROPHIC CALCIFICATION
 massM	735	11604	1275	20100511	S800	R	292	R	massM	InvasiveDuctal
 massB	736	6041	1297	20090519	S600	L	407	L	massB	BenignTissue
 massM	744	3907	1277	20081220	S700	L	295	L	massM	InvasiveDuctal
-massM	745	4704	1278	20090219	S800	L	296	L	massM	InvasiveDuctal
-massM	747	8689	1279	20091112	S600	R	297	R	massM	InvasiveDuctal
+massM	745	4704	1278	20090219	S800	L	296	L	massM	InvasiveDuctal  ----- no t2
 nonmassB	752	5474	10490	20090413	S600	R	305	R	nonmassB	BenignTissue
 nonmassB	752	5474	10491	20090413	S600	R	305	R	nonmassB	Fibrocystic
 nonmassM	755	7640	10480	20090905	S600	L	298	B	nonmassM	InsituDuctal
@@ -88,10 +95,6 @@ massM	764	8458	1310	20091029	S600	R	310	R	massM	InvasiveDuctal
 nonmassB	765	8236	10552	20091015	S600	R	406	R	nonmassB	AtypicalDuctalHyperplasia
 massB	771	1012	1312	20080610	S600	L	312	L	massB	DuctPapilloma
 massB	771	1012	1313	20080610	S600	L	312	L	massB	DuctPapilloma
-massB	775	14616	1317	20101125	S800	L	314	L	massB	BenignTissue
-nonmassB	775	14616	10498	20101125	S800	L	314	L	nonmassB	BenignTissue
-nonmassB	775	14616	10499	20101125	S800	L	314	L	nonmassB	BenignTissue
-nonmassB	775	14616	10500	20101125	S800	L	314	L	nonmassB	BenignTissue
 massB	776	13062	1320	20100816	S800	R	315	R	massB	AtypicalCells
 massM	776	13062	1318	20100816	S800	L	315	L	massM	InvasiveDuctal
 massM	776	13062	1319	20100816	S800	L	315	L	massM	InvasiveDuctal
@@ -99,7 +102,6 @@ massB	779	5386	1322	20090406	S600	B	317	L	massB	SCLEROSING ADENOSIS
 massM	779	5386	1321	20090406	S600	R	317	R	massM	InvasiveLobular
 massM	781	2462	1325	20080918	S600	R	318	R	massM	InvasiveDuctal
 nonmassM	781	2462	10507	20080918	S600	R	318	R	nonmassM	InvasiveDuctal
-massM	782	2713	1327	20081004	700	R	319	R	massM	InvasiveDuctal
 massB	783	5210	1329	20090324	S600	L	320	L	massB	Fibrocystic
 massM	789	3470	1331	20081122	S600	R	322	R	massM	InsituDuctal
 nonmassB	790	4218	10508	20090117	S600	L	323	R	nonmassB	DuctPapilloma
@@ -109,7 +111,7 @@ massB	792	12356	1333	20100626	S800	L	324	L	massB	DuctPapilloma
 massB	792	12356	1334	20100626	S800	L	324	L	massB	DuctPapilloma
 massB	793	7521	1340	20090828	S600	R	325	R	massB	Fibroadenoma
 nonmassB	796	8176	10513	20091010	S600	L	330	L	nonmassB	AtypicalLobularHyperplasia
-massB	799	13427	1498	20100911	S800	L	332	L	massB	Fibrocystic
+massB	799	13427	1498	20100911	S800	L	332	L	massB	Fibrocystic    ---lots of anotations
 massM	803	7557	1353	20090831	S700	L	335	L	massM	InvasiveDuctal
 massM	803	7557	1465	20090831	S700	L	335	L	massM	InvasiveDuctal
 nonmassM	807	11009	10515	20100401	S800	L	336	L	nonmassM	InsituDuctal
@@ -139,7 +141,6 @@ massB	839	4966	1378	20090307	S600	L	354	L	massB	BenignTissue
 massB	839	4966	1379	20090307	S600	L	354	L	massB	BenignTissue
 massB	843	5595	1380	20090419	S600	R	355	R	massB	Fibrocystic
 massM	845	14424	1385	20101112	S800	R	358	R	massM	InvasiveLobular
-massM	846	3255	1386	20081110	600	R	359	R	massM	MetaplasticCarcinoma
 massM	847	7921	1387	20090924	S600	R	360	R	massM	InvasiveDuctal
 massB	850	13610	1490	20100923	S800	R	398	R	massB	BenignTissue
 nonmassB	850	13610	10543	20100923	S800	R	398	R	nonmassB	AtypicalDuctalHyperplasia
@@ -162,8 +163,8 @@ massM	865	11475	1494	20100503	S800	R	402	R	massM	InvasiveDuctal
 nonmassM	865	11475	10546	20100503	S800	R	402	R	nonmassM	InvasiveDuctal
 nonmassM	867	13362	10528	20100907	S800	R	374	R	nonmassM	InvasiveDuctal
 nonmassM	870	9030	10547	20091203	S600	L	403	L	nonmassM	InvasiveLobular
-massB	873	5889	1419	20091128	S700	L	376	L	massB	Fibrocystic
-massB	873	5889	1420	20091128	S700	L	376	L	massB	Fibrocystic
+massB	873	5889	1419	20090509	S700	L	376	L	massB	Fibrocystic  -- problem with t2 overlap
+massB	873	5889	1420	20090509	S700	L	376	L	massB	Fibrocystic -- problem with t2
 nonmassB	877	2004	10523	20080818	S600	R	363	R	nonmassB	AtypicalLobularHyperplasia
 massB	880	5174	1421	20090321	S600	R	377	R	massB	Papillary(focalAtypia)
 massM	880	17670	1437	20110505	S800	R	378	R	massM	InsituDuctal
@@ -181,7 +182,6 @@ nonmassM	6004	7696	10421	20090910	S600	R	176	R	nonmassM	InvasiveLobular
 massM	6005	7660	1112	20090908	S600	R	177	R	massM	InvasiveLobular
 massM	6005	7660	1113	20090908	S600	L	177	L	massM	InvasiveLobular
 nonmassM	6005	7660	10422	20090908	S600	R	177	R	nonmassM	InvasiveLobular
-massM	6008	264	1116	20080424	S600	R	178	R	massM	InvasiveDuctal
 massM	6014	8309	1126	20091020	S600	L	184	L	massM	InvasiveDuctal
 massM	6015	7961	1127	20090926	S800	R	185	R	massM	InvasiveDuctal
 nonmassM	6015	7961	10424	20090926	S800	R	185	R	nonmassM	InvasiveDuctal
@@ -203,12 +203,12 @@ massB	6029	8259	1149	20091016	S600	R	204	R	massB	Fibroadenoma
 massB	6029	8259	1150	20091016	S600	R	204	R	massB	Fibroadenoma
 massB	6034	6417	1154	20090615	S600	R	211	R	massB	Fibroadenoma
 massB	6034	6417	1155	20090615	S600	R	211	R	massB	Fibroadenoma
-nonmassB	6034	6417	10438	20090615	S600	R	211	R	nonmassB	BenignTissue
+nonmassB	6034	6417	10438	20090615	S600	R	211	R	nonmassB	BenignTissue    
 massM	6035	76410	1156	20090905	S600	L	212	L	massM	InvasiveDuctal
 massM	6035	76410	1158	20090905	S600	L	212	L	massM	InvasiveDuctal
 massM	6036	9064	1159	20091205	S700	R	213	R	massM	InvasiveDuctal
 massM	6037	7300	1160	20090813	S600	L	214	L	massM	InvasiveDuctal
-massM	6037	7300	1162	20090813	S600	R	214	R	massM	InvasiveDuctal
+massM	6037	7300	1162	20090813	S600	R	214	R	massM	InvasiveDuctal 
 massM	6038	7311	1166	20090814	S600	L	215	L	massM	InvasiveDuctal
 nonmassB	6038	7311	10441	20090814	S600	L	215	L	nonmassB	BenignTissue
 nonmassB	6038	7311	10442	20090814	S600	R	215	L	nonmassB	BenignTissue
@@ -241,7 +241,7 @@ nonmassB	728	12222	10475	20100617	S800	L	283	B	nonmassB	AtypicalDuctalHyperplasi
 massM	742	12748	1283	20100723	S800	L	300	L	massM	Atypical Papilloma
 nonmassM	742	12748	10483	20100723	S800	L	300	L	nonmassM	InvasiveDuctal
 nonmassB	752	5474	10489	20090413	S600	R	305	R	nonmassB	BenignTissue
-nonmassM	755	7640	10481	20090905	S600	R	298	B	nonmassM	BenignTissue
+nonmassB	755	7640	10481	20090905	S600	R	298	B	nonmassB	BenignTissue
 massB	758	3085	1306	20081030	S600	R	307	R	massB	Fibrocystic
 nonmassM	776	13062	10505	20100816	S800	L	315	L	nonmassM	InvasiveDuctal
 massB	778	3144	1476	20081103	S600	R	388	R	massB	Fibroadenoma
@@ -252,9 +252,9 @@ massM	813	13464	1356	20100914	S800	L	339	L	massM	InvasiveLobularCarcinoma
 massM	827	6402	1485	20090613	S600	R	394	B	massM	UsualDuctalHyperplasia
 nonmassB	853	2298	10524	20080908	S600	R	366	L	nonmassB	Fibrocystic
 massM	862	13789	1412	20101004	S800	L	372	L	massM	InsituDuctal
-massM	871	8955	1415	20091128	700	L	375	L	massM	InvasiveLobular
-massM	871	8955	1416	20091128	700	L	375	L	massM	InsituDuctal
-massM	871	8955	1417	20091128	700	L	375	L	massM	AtypicalDuctalHyperplasia
+massM	871	8955	1415	20091128	700	L	375	L	massM	InvasiveLobular ----- mismatch with T2
+massM	871	8955	1416	20091128	700	L	375	L	massM	InsituDuctal  ----- mismatch with T2
+massM	871	8955	1417	20091128	700	L	375	L	massM	AtypicalDuctalHyperplasia     ----- mismatch with T2
 massB	880	5174	1422	20090321	S600	R	377	R	massB	Atypical Papilloma
 massM	881	15209	1496	20051117	S8	L	404	L	massM	InsituDuctal
 nonmassM	883	9777	10550	20100122	700	L	405	L	nonmassM	InsituDuctal
@@ -270,3 +270,7 @@ massM	6035	76410	1157	20090905	S600	L	212	L	massM   	InvasiveDuctal
 massM	6039	7992	1170	20090929	S600	L	216	L	massM	InsituDuctal
 massM	6042	28673	1176	20080119	S600	R	220	R	massM	InvasiveDuctal
 nonmassM	6052	13412	10455	20100910	S3	R	235	R	nonmassM	InvasiveDuctal
+massB	775	14616	1317	2011125	S800	L	314	L	massB	BenignTissue
+nonmassB	775	14616	10498	20101125	S800	L	314	L	nonmassB	BenignTissue
+nonmassB	775	14616	10499	20101125	S800	L	314	L	nonmassB	BenignTissue
+nonmassB	775	14616	10500	20101125	S800	L	314	L	nonmassB	BenignTissue
