@@ -1,13 +1,3 @@
-####### ERROR
-massM	667	20499	85	20090129	S8000	R	13	R	massM	InsituDuctal ----- mismatch with T2
-massB	736	6041	1297	20090519	S600	L	407	L	massB	BenignTissue --- error in T2 features
-massM	747	8689	1279	20091112	S600	R	297	R	massM	InvasiveDuctal --- error loading 2 sequences as T2
-massM	846	3255	1386	20081110	600	R	359	R	massM	MetaplasticCarcinoma --- error with T2 referemce
-massM	6008	264	1116	20080424	S600	R	178	R	massM	InvasiveDuctal
-nonmassM	672	4893	10456	20090505	800	L	237	L	nonmassM	InsituDuctal ----- mismatch with T2
-massM	782	2713	1327	20081004	700	R	319	R	massM	InvasiveDuctal ----- mismatch with T2
-
-####### DONE
 massM	18	7714	1721	20030205	S44	R	457	R	massM	InvasiveDuctal
 massM	18	7714	1722	20030205	S44	L	457	R	massM	InvasiveDuctal
 nonmassM	59	4614	10665	20011001	S33	R	462	R	nonmassM	InvasiveDuctal ----- no t2
@@ -274,3 +264,14 @@ massB	775	14616	1317	2011125	S800	L	314	L	massB	BenignTissue
 nonmassB	775	14616	10498	20101125	S800	L	314	L	nonmassB	BenignTissue
 nonmassB	775	14616	10499	20101125	S800	L	314	L	nonmassB	BenignTissue
 nonmassB	775	14616	10500	20101125	S800	L	314	L	nonmassB	BenignTissue
+####### DONE
+
+
+massM	667	20499	85	20090129	S8000	R	13	R	massM	InsituDuctal ----- mismatch with T2
+massB	736	6041	1297	20090519	S600	L	407	L	massB	BenignTissue --- error in T2 features
+massM	747	8689	1279	20091112	S600	R	297	R	massM	InvasiveDuctal --- error loading 2 sequences as T2
+massM	846	3255	1386	20081110	600	R	359	R	massM	MetaplasticCarcinoma --- error with T2 referemce
+massM	6008	264	1116	20080424	S600	R	178	R	massM	InvasiveDuctal
+nonmassM	672	4893	10456	20090505	800	L	237	L	nonmassM	InsituDuctal ----- mismatch with T2
+massM	782	2713	1327	20081004	700	R	319	R	massM	InvasiveDuctal ----- mismatch with T2
+####### ERROR

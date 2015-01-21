@@ -101,14 +101,12 @@ class features_T2(object):
         
         return im2.reshape(im.shape), cdf 
         
-        
-    def extract_muscleSI(self, T2image, image_pos_pat, image_ori_pat, origin, iren, ren, picker, xplane, yplane, zplane):
+    def extract_muscleSI(self, T2image, image_pos_pat, image_ori_pat, iren, ren, picker, xplane, yplane, zplane):
         """ extract_muscleSI: Place manually a widget over muscle, extract reference SI
         
         INPUTS:
         =======        
         images: (vtkImageData)   list of Input image to Transform
-        origin: float[3]    list of origin coordinates
         OUTPUTS:
         =======
         muscleSI (float)    Signal intensity from muscle
@@ -175,8 +173,8 @@ class features_T2(object):
         # create a simple box VOI mask shape using previously found boundsPlane_preselected
         VOIStencil = vtk.vtkROIStencilSource()
         VOIStencil.SetShapeToBox()
-        VOIStencil.SetBounds( self.bounds_muscleSI )    
         VOIStencil.SetInformationInput(t_T2image)
+        VOIStencil.SetBounds( self.bounds_muscleSI )    
         VOIStencil.Update()
                                 
         # cut the corresponding VOI region and set the background:
@@ -185,6 +183,7 @@ class features_T2(object):
         extractVOI_imgstenc.SetStencil(VOIStencil.GetOutput())
         extractVOI_imgstenc.ReverseStencilOff()
         extractVOI_imgstenc.SetBackgroundValue(5000)
+        extractVOI_imgstenc.SetInformation(t_T2image.GetInformation())
         extractVOI_imgstenc.Update()
             
         # take out average image
@@ -203,10 +202,95 @@ class features_T2(object):
         print "\nMuscle scalar Range:"
         print muscle_scalar_range[0], muscle_scalar_range[1]
         
+        return muscleSI, muscle_scalar_range, self.bounds_muscleSI
+
+    
+    def load_muscleSI(self, T2image, image_pos_pat, image_ori_pat, m_bounds, iren):
+        """ load_muscleSI: Place automatically a widget over muscle location from file
+        
+        INPUTS:
+        =======        
+        images: (vtkImageData)   list of Input image to Transform
+        OUTPUTS:
+        =======
+        muscleSI (float)    Signal intensity from muscle
+        muscleSIcoords (float[3])            cords where Signal intensity from muscle is measured
+        
+        """
+        ## Transform T2 img
+        loadDisplay = Display()
+        
+        # Proceed to build reference frame for display objects based on DICOM coords   
+        [t_T2image, transform_cube] = loadDisplay.dicomTransform(T2image, image_pos_pat, image_ori_pat)
+            
+        # Calculate the center of the volume
+        t_T2image.UpdateInformation() 
+               
+        print "\nBoxwidget placed..."
+        #################################################################
+        # The box widget observes the events invoked by the render window
+        # interactor.  These events come from user interaction in the render
+        # window.
+        # Place the interactor initially. The output of the reader is used to
+        # place the box widget.
+        self.boxWidget = vtk.vtkBoxWidget()
+        self.boxWidget.SetInteractor(iren)
+        self.boxWidget.SetPlaceFactor(1)
+        self.boxWidget.SetInput(t_T2image)
+        self.boxWidget.ScalingEnabledOff()
+        self.boxWidget.OutlineCursorWiresOn()                
+                
+        # Construct a bounding box
+        bwidg = [0,0,0,0,0,0]     
+        bwidg[0] = m_bounds[0]; bwidg[1] = m_bounds[1]; 
+        bwidg[2] = m_bounds[2]; bwidg[3] = m_bounds[3];
+        bwidg[4] = m_bounds[4]; bwidg[5] = m_bounds[5];
+        self.bounds_muscleSI = bwidg
+        print "\nbounds_muscleSI "
+        print self.bounds_muscleSI
+
+        # add to visualize        
+        self.boxWidget.PlaceWidget( self.bounds_muscleSI )
+        self.boxWidget.On()
+        
+        ##########
+        ### Set image stencil for muscle
+        # create a simple box VOI mask shape using previously found boundsPlane_preselected
+        VOIStencil = vtk.vtkROIStencilSource()
+        VOIStencil.SetShapeToBox()
+        VOIStencil.SetBounds( self.bounds_muscleSI )    
+        VOIStencil.SetInformationInput(t_T2image)
+        VOIStencil.Update()
+                                
+        # cut the corresponding VOI region and set the background:
+        extractVOI_imgstenc = vtk.vtkImageStencil()
+        extractVOI_imgstenc.SetInput(t_T2image)
+        extractVOI_imgstenc.SetStencil(VOIStencil.GetOutput())
+        extractVOI_imgstenc.ReverseStencilOff()
+        extractVOI_imgstenc.SetBackgroundValue(5000)
+        extractVOI_imgstenc.Update()
+            
+        # take out average image
+        finalmuscleSIIm = vtk.vtkImageData()
+        finalmuscleSIIm = extractVOI_imgstenc.GetOutput()
+        finalmuscleSIIm.Update()
+                
+        ## Display histogram 
+        dims = finalmuscleSIIm .GetDimensions()
+        scalars = finalmuscleSIIm.GetPointData().GetScalars()
+        np_scalars = vtk_to_numpy(scalars)      
+        np_scalars = np_scalars.reshape(dims[2], dims[1], dims[0]) 
+        np_scalars = np_scalars.transpose(2,1,0)
+        muscleSI = np_scalars[np_scalars<5000]
+                
+        muscle_scalar_range = [muscleSI.min(), muscleSI.max()]
+        print "\nMuscle scalar Range:"
+        print muscle_scalar_range[0], muscle_scalar_range[1]
+        
         return muscleSI, muscle_scalar_range
-
-
-    def extract_lesionSI(self, T2image, lesion3D, image_pos_pat, image_ori_pat):
+        
+        
+    def extract_lesionSI(self, T2image, lesion3D, image_pos_pat, image_ori_pat, loadDisplay, pathSegment, nameSegment):
         """ extract_lesionSI: Use lesion segmentation to extract lesion SI
         
         INPUTS:
@@ -257,11 +341,16 @@ class features_T2(object):
         np_scalars = np_scalars.reshape(dims[2], dims[1], dims[0]) 
         np_scalars = np_scalars.transpose(2,1,0)
         lesionSI = np_scalars[np_scalars<5000]
-        
-        
-        lesion_scalar_range = [lesionSI.min(), lesionSI.max()]
+                
         print "\nLesion_scalar Range:"
+        lesion_scalar_range = [lesionSI.min(), lesionSI.max()]
         print lesion_scalar_range[0], lesion_scalar_range[1]
+        
+        fileT2name = pathSegment+'/'+nameSegment
+        T2imseg = vtk.vtkMetaImageWriter()
+        T2imseg.SetFileName(fileT2name+'_T2imgseg.mhd')
+        T2imseg.SetInput(extractVOIlesion_imgstenc.GetOutput())
+        T2imseg.Write()
         
         return lesionSI, lesion_scalar_range
         
@@ -304,10 +393,10 @@ class features_T2(object):
         pco = [0,0,0]
         
         ## Transform T2 img
-        loadDisplay = Display()
+        localloadDisplay = Display()
         
         # Proceed to build reference frame for display objects based on DICOM coords   
-        [t_T2image, transform_cube] = loadDisplay.dicomTransform(T2image, image_pos_pat, image_ori_pat)
+        [t_T2image, transform_cube] = localloadDisplay.dicomTransform(T2image, image_pos_pat, image_ori_pat)
         # Update info
         t_T2image.UpdateInformation() 
         
@@ -488,10 +577,10 @@ class features_T2(object):
         # N is the number of distinct gray levels in the histogram equalized image;
         # obtain vols of interest
         ## Transform T2 img
-        loadDisplay = Display()
+        localloadDisplay = Display()
         
         # Proceed to build reference frame for display objects based on DICOM coords   
-        [t_T2image, transform_cube] = loadDisplay.dicomTransform(T2image, image_pos_pat, image_ori_pat)
+        [t_T2image, transform_cube] = localloadDisplay.dicomTransform(T2image, image_pos_pat, image_ori_pat)
         # Update info
         t_T2image.UpdateInformation() 
         
@@ -637,9 +726,7 @@ class features_T2(object):
         plt.axis('image')
         
         # FInally display
-        plt.show()
-        
-        #plt.close()     
+        plt.show() 
             
         # writing to file from row_lesionID Drow_PathRepID
         print "\n Average texture features for each orientation"
@@ -679,5 +766,4 @@ class features_T2(object):
         columns=['T2texture_contrast_zero', 'T2texture_contrast_quarterRad', 'T2texture_contrast_halfRad', 'T2texture_contrast_threeQuaRad', 'T2texture_homogeneity_zero', 'T2texture_homogeneity_quarterRad', 'T2texture_homogeneity_halfRad', 'T2texture_homogeneity_threeQuaRad', 'T2texture_dissimilarity_zero', 'T2texture_dissimilarity_quarterRad', 'T2texture_dissimilarity_halfRad', 'T2texture_dissimilarity_threeQuaRad', 'T2texture_correlation_zero', 'T2texture_correlation_quarterRad', 'T2texture_correlation_halfRad', 'T2texture_correlation_threeQuaRad', 'T2texture_ASM_zero', 'T2texture_ASM_quarterRad', 'T2texture_ASM_halfRad', 'T2texture_ASM_threeQuaRad', 'T2texture_energy_zero', 'T2texture_energy_quarterRad', 'T2texture_energy_halfRad', 'T2texture_energy_threeQuaRad'])
 
 
-        
         return self.textureT2Features

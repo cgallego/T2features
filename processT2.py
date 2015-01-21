@@ -227,7 +227,7 @@ if __name__ == '__main__':
             # Extract Lesion and Muscle Major pectoralies signal                                   
             #############################             
             T2 = features_T2()  
-            [T2_muscleSI, muscle_scalar_range]  = T2.extract_muscleSI(load.T2Images, load.T2image_pos_pat, load.T2image_ori_pat, loadDisplay.origin, loadDisplay.iren1, loadDisplay.renderer1, loadDisplay.picker, loadDisplay.xImagePlaneWidget, loadDisplay.yImagePlaneWidget, loadDisplay.zImagePlaneWidget)
+            [T2_muscleSI, muscle_scalar_range, bounds_muscleSI]  = T2.extract_muscleSI(load.T2Images, load.T2image_pos_pat, load.T2image_ori_pat, loadDisplay.iren1, loadDisplay.renderer1, loadDisplay.picker, loadDisplay.xImagePlaneWidget, loadDisplay.yImagePlaneWidget, loadDisplay.zImagePlaneWidget)
             print "ave. T2_muscleSI: %d" % mean(T2_muscleSI)
                     
             [T2_lesionSI, lesion_scalar_range]  = T2.extract_lesionSI(load.T2Images, lesion3D, load.T2image_pos_pat, load.T2image_ori_pat)
@@ -265,13 +265,7 @@ if __name__ == '__main__':
             print "\n=========================================="
             print morphoT2features
             print "\n=========================================="
-            
-            print "\n Extract T2 Texture features..."
-            textureT2features = T2.extractT2texture(load.T2Images, lesion3D, load.T2image_pos_pat, load.T2image_ori_pat)
-            print "\n=========================================="
-            print textureT2features
-            print "\n=========================================="
-            
+
             #############################
             ###### Finish tidying up and save to file
             ## append collection of cases
@@ -279,6 +273,7 @@ if __name__ == '__main__':
             morphoT2features['id']=fStudyID
             morphoT2features.set_index('id',inplace=False)
             casesFrame = pd.merge(casesFrame, morphoT2features, on='id', how='inner')
+            print casesFrame
             
             # deal with closing windows, plots, renders, actors
             pylab.close('all')
