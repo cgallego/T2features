@@ -519,21 +519,26 @@ class features_T2(object):
             #############
             # Compute vector in the direction gradient at margin point
             grad_marginpt = array([grad_pt])
+            norm_grad_marginpt = grad_marginpt/linalg.norm(grad_marginpt)
             
             # Compute dot product (unit vector for dot product)
-            p_dot = dot(grad_marginpt, norm_rdir)
-            norm_p_dot = linalg.norm(p_dot)
+            p_dot = dot(norm_grad_marginpt, norm_rdir)
+            norm_p_dot = np.abs(p_dot)[0]
             
             H_norm_p.append(norm_p_dot)    
-        
+                
+                
         # The histogram of radial gradient values quantifying the frequency of occurrence of the dot products in a given region of interest
         # radial gradient histogram. The hist() function now has a lot more options
         # first create a single histogram
                     
         # the histogram of the data with histtype='step'
         plt.figure()
-        n, bins, patches = plt.hist(array(H_norm_p), 50, normed=1, histtype='bar',facecolor='blue', alpha=0.75)
-        n, min_max, mean_bins, var_bins, skew, kurt = stats.describe(bins)
+        nsamples, bins, patches = plt.hist(array(H_norm_p), 50, normed=1, histtype='bar',facecolor='blue', alpha=0.75)
+        n, min_max, mean_bins, var_bins, skew, kurt = stats.describe(nsamples)
+        
+        mean_bins = np.mean(H_norm_p)
+        var_bins = np.var(H_norm_p)
         
         print("\n mean RGB: {0:8.6f}".format( mean_bins ))
         print("variance RGB: {0:8.6f}".format( var_bins ))
@@ -642,18 +647,29 @@ class features_T2(object):
         print "coresponding ijk_vtk indices:"
         print ijk
         ijk_vtk = ijk
-    
+        
+        ##normalize the whole 3D image first to [0 255] and then change the type to uint8. The normalization can be done simply by:
+        # round((img-min(img))/(max(img)-min(img))*255)
+        #****************************"
+        print "Normalizing data..."
+        np_VOI_imagedataflat = np_VOI_imagedata.flatten().astype(float)
+        np_VOI_imagedata_num = (np_VOI_imagedataflat-min(np_VOI_imagedataflat))
+        np_VOI_imagedata_den = (max(np_VOI_imagedataflat)-min(np_VOI_imagedataflat))
+        np_VOI_imagedata_flatten = 255*(np_VOI_imagedata_num/np_VOI_imagedata_den)
+        np_VOI_imagedata_norm = np_VOI_imagedata_flatten.reshape(dims[0], dims[1], dims[2])
+        print np_VOI_imagedata_norm
+        
         # compute texture cdf        
-        eq_numpy_pre_VOI_imagedata, cdf = self.histeq(np_VOI_imagedata[:,:,int(ijk_vtk[2])])    
+        eq_numpy_pre_VOI_imagedata, cdf = self.histeq(np_VOI_imagedata_norm[:,:,int(ijk_vtk[2])])    
         plt.figure()
         plt.subplot(231)
-        n, bins, patches = plt.hist(array(np_VOI_imagedata[:,:,int(ijk_vtk[2])].flatten()), 50, normed=1, facecolor='green', alpha=0.75)
+        n, bins, patches = plt.hist(array(np_VOI_imagedata_norm[:,:,int(ijk_vtk[2])].flatten()), 50, normed=1, facecolor='green', alpha=0.75)
         
         plt.subplot(233)
         n, bins, patches = plt.hist(array(eq_numpy_pre_VOI_imagedata.flatten()), 50, normed=1, facecolor='green', alpha=0.75)
          
         plt.subplot(234)
-        plt.imshow(np_VOI_imagedata[:,:,int(ijk_vtk[2])])
+        plt.imshow(np_VOI_imagedata_norm[:,:,int(ijk_vtk[2])])
         plt.gray()
         
         plt.subplot(236)
@@ -665,15 +681,8 @@ class features_T2(object):
         
         #****************************"
         # Do histogram cast
-        if( np_VOI_imagedata.max() > 256):
-            # Do only VOI histo equ
-            np_VOI_imagedata = np_VOI_imagedata.astype('uint8')
-            eq_numpy_pre_VOI_imagedata, cdf = self.histeq(np_VOI_imagedata[:,:,int(ijk_vtk[2])])
-        else:
-            # Do only VOI histo equ
-            np_VOI_imagedata = np_VOI_imagedata.astype('uint8')
-            eq_numpy_pre_VOI_imagedata, cdf = self.histeq(np_VOI_imagedata[:,:,int(ijk_vtk[2])])
-        
+        # Do only VOI histo equ
+        eq_numpy_pre_VOI_imagedata, cdf = self.histeq(np_VOI_imagedata_norm[:,:,int(ijk_vtk[2])])
         
         # Get the shape of the numpy image data to confirm dimensions
         eq_numpy_pre_VOI_imagedata = eq_numpy_pre_VOI_imagedata.reshape(dims[0], dims[1], 1)
@@ -683,7 +692,7 @@ class features_T2(object):
         # compute some GLCM properties each patch
         # p(i,j) is the (i,j)th entry in a normalized spatial gray-level dependence matrix; 
         lesion_patches = []
-        lesion_patches = np_VOI_imagedata[
+        lesion_patches = np_VOI_imagedata_norm[
                 int(ijk_vtk[0] - lesion_radius):int(ijk_vtk[0] + lesion_radius),
                 int(ijk_vtk[1] - lesion_radius):int(ijk_vtk[1] + lesion_radius),
                 int(ijk_vtk[2])]
@@ -715,7 +724,7 @@ class features_T2(object):
         
         # display original image with locations of patches
         plt.subplot(3, 2, 1)
-        plt.imshow(np_VOI_imagedata[:,:,int(ijk_vtk[2])] , cmap=plt.cm.gray, interpolation='nearest',
+        plt.imshow(np_VOI_imagedata_norm[:,:,int(ijk_vtk[2])] , cmap=plt.cm.gray, interpolation='nearest',
                vmin=0, vmax=255)
         # Plot
         # create the figure
