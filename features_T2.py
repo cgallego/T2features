@@ -290,6 +290,91 @@ class features_T2(object):
         return muscleSI, muscle_scalar_range
         
         
+    def load_muscleSI_mha(self, T2image, image_pos_pat, image_ori_pat, m_bounds, iren):
+        """ load_muscleSI: Place automatically a widget over muscle location from file
+        
+        INPUTS:
+        =======        
+        images: (vtkImageData)   list of Input image to Transform
+        OUTPUTS:
+        =======
+        muscleSI (float)    Signal intensity from muscle
+        muscleSIcoords (float[3])            cords where Signal intensity from muscle is measured
+        
+        """
+        ## Transform T2 img
+        loadDisplay = Display()
+        
+        # Proceed to build reference frame for display objects based on DICOM coords   
+        t_T2image = loadDisplay.mhaTransform(T2image, image_pos_pat, image_ori_pat)
+            
+        # Calculate the center of the volume
+        t_T2image.UpdateInformation() 
+               
+        print "\nBoxwidget placed..."
+        #################################################################
+        # The box widget observes the events invoked by the render window
+        # interactor.  These events come from user interaction in the render
+        # window.
+        # Place the interactor initially. The output of the reader is used to
+        # place the box widget.
+        self.boxWidget = vtk.vtkBoxWidget()
+        self.boxWidget.SetInteractor(iren)
+        self.boxWidget.SetPlaceFactor(1)
+        self.boxWidget.SetInput(t_T2image)
+        self.boxWidget.ScalingEnabledOff()
+        self.boxWidget.OutlineCursorWiresOn()                
+                
+        # Construct a bounding box
+        bwidg = [0,0,0,0,0,0]     
+        bwidg[0] = m_bounds[0]; bwidg[1] = m_bounds[1]; 
+        bwidg[2] = m_bounds[2]; bwidg[3] = m_bounds[3];
+        bwidg[4] = m_bounds[4]; bwidg[5] = m_bounds[5];
+        self.bounds_muscleSI = bwidg
+        print "\nbounds_muscleSI "
+        print self.bounds_muscleSI
+
+        # add to visualize        
+        self.boxWidget.PlaceWidget( self.bounds_muscleSI )
+        self.boxWidget.On()
+        
+        ##########
+        ### Set image stencil for muscle
+        # create a simple box VOI mask shape using previously found boundsPlane_preselected
+        VOIStencil = vtk.vtkROIStencilSource()
+        VOIStencil.SetShapeToBox()
+        VOIStencil.SetBounds( self.bounds_muscleSI )    
+        VOIStencil.SetInformationInput(t_T2image)
+        VOIStencil.Update()
+                                
+        # cut the corresponding VOI region and set the background:
+        extractVOI_imgstenc = vtk.vtkImageStencil()
+        extractVOI_imgstenc.SetInput(t_T2image)
+        extractVOI_imgstenc.SetStencil(VOIStencil.GetOutput())
+        extractVOI_imgstenc.ReverseStencilOff()
+        extractVOI_imgstenc.SetBackgroundValue(5000)
+        extractVOI_imgstenc.Update()
+            
+        # take out average image
+        finalmuscleSIIm = vtk.vtkImageData()
+        finalmuscleSIIm = extractVOI_imgstenc.GetOutput()
+        finalmuscleSIIm.Update()
+                
+        ## Display histogram 
+        dims = finalmuscleSIIm .GetDimensions()
+        scalars = finalmuscleSIIm.GetPointData().GetScalars()
+        np_scalars = vtk_to_numpy(scalars)      
+        np_scalars = np_scalars.reshape(dims[2], dims[1], dims[0]) 
+        np_scalars = np_scalars.transpose(2,1,0)
+        muscleSI = np_scalars[np_scalars<5000]
+                
+        muscle_scalar_range = [muscleSI.min(), muscleSI.max()]
+        print "\nMuscle scalar Range:"
+        print muscle_scalar_range[0], muscle_scalar_range[1]
+        
+        return muscleSI, muscle_scalar_range, self.bounds_muscleSI
+        
+        
     def extract_lesionSI(self, T2image, lesion3D, image_pos_pat, image_ori_pat, loadDisplay, pathSegment, nameSegment):
         """ extract_lesionSI: Use lesion segmentation to extract lesion SI
         
@@ -351,6 +436,64 @@ class features_T2(object):
         T2imseg.SetFileName(fileT2name+'_T2imgseg.mhd')
         T2imseg.SetInput(extractVOIlesion_imgstenc.GetOutput())
         T2imseg.Write()
+        
+        return lesionSI, lesion_scalar_range
+        
+    def extract_lesionSI_mha(self, T2image, lesion3D, image_pos_pat, image_ori_pat, loadDisplay):
+        """ extract_lesionSI: Use lesion segmentation to extract lesion SI
+        
+        INPUTS:
+        =======        
+        images: (vtkImageData)   list of Input image to Transform
+        lesion3D: (vtkPolyData)     segmentation
+        OUTPUTS:
+        =======
+        lesionSI (float)    Signal intensity from lesion
+        lesion_scalar_range (float[3])    SI range inside lesion
+        
+        """
+        ## Transform T2 img
+        loadDisplay = Display()
+        
+        # Proceed to build reference frame for display objects based on DICOM coords   
+        t_T2image = loadDisplay.mhaTransform(T2image, image_pos_pat, image_ori_pat)
+            
+        # Update info
+        t_T2image.UpdateInformation() 
+                
+        # create a simple box VOI mask shape using previously found boundsPlane_preselected
+        VOIStencil = vtk.vtkROIStencilSource()
+        VOIStencil.SetShapeToBox()
+        VOIStencil.SetBounds( lesion3D.GetBounds() )    
+        VOIStencil.SetInformationInput(t_T2image)
+        VOIStencil.Update()
+        
+        self.boxWidget.PlaceWidget( lesion3D.GetBounds() )
+        self.boxWidget.On()
+                                        
+        # cut the corresponding VOI region and set the background:
+        extractVOIlesion_imgstenc = vtk.vtkImageStencil()
+        extractVOIlesion_imgstenc.SetInput(t_T2image)
+        extractVOIlesion_imgstenc.SetStencil(VOIStencil.GetOutput())
+        extractVOIlesion_imgstenc.ReverseStencilOff()
+        extractVOIlesion_imgstenc.SetBackgroundValue(5000)
+        extractVOIlesion_imgstenc.Update()
+            
+        # take out average image
+        finallesionSIIm = vtk.vtkImageData()
+        finallesionSIIm = extractVOIlesion_imgstenc.GetOutput()
+                
+        ## extract scalars 
+        dims = finallesionSIIm.GetDimensions()
+        scalars = finallesionSIIm.GetPointData().GetScalars()
+        np_scalars = vtk_to_numpy(scalars)    
+        np_scalars = np_scalars.reshape(dims[2], dims[1], dims[0]) 
+        np_scalars = np_scalars.transpose(2,1,0)
+        lesionSI = np_scalars[np_scalars<5000]
+                
+        print "\nLesion_scalar Range:"
+        lesion_scalar_range = [lesionSI.min(), lesionSI.max()]
+        print lesion_scalar_range[0], lesion_scalar_range[1]
         
         return lesionSI, lesion_scalar_range
         
