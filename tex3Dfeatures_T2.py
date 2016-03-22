@@ -19,6 +19,7 @@ import sys
 import string
 from sys import argv, stderr, exit
 import vtk
+from vtk.util.numpy_support import vtk_to_numpy, numpy_to_vtk
 import processDicoms
 import dicom
 
@@ -33,11 +34,13 @@ from scipy import stats
 from skimage.feature import greycomatrix, greycoprops
 
 #!/usr/bin/env python
-class features_T2(object):
+class tex3Dfeatures_T2(object):
     """
     USAGE:
     =============
-    T2 = features_T2()
+    T2 = tex3Dfeatures_T2()
+    Based on features_T2, this version inplements 3D texture and features based on nondirectional GLCM,
+    as proposed by Chen et al (http://www.ncbi.nlm.nih.gov/pubmed/17763361) MRM 2007
     """
     def __init__(self): 
         """ initialize visualization with standard vtk actors, renders, windowsn, interactors """           
@@ -151,7 +154,7 @@ class features_T2(object):
         self.textActor.SetMapper(self.textMapper)
         ren.AddActor2D(self.textActor)
         picker.AddObserver("EndPickEvent", self.annotatePick)
-        iren.Start()        
+        #iren.Start()        
                 
         # Construct a bounding box
         bwidg = [0,0,0,0,0,0]     
@@ -309,7 +312,7 @@ class features_T2(object):
         return muscleSI, muscle_scalar_range, self.bounds_muscleSI
         
         
-    def load_muscleSI(self, T2image, image_pos_pat, image_ori_pat, m_bounds, iren):
+    def load_muscleSI(self, t_T2image, m_bounds, iren, ren, picker, xplane, yplane, zplane):
         """ load_muscleSI: Place automatically a widget over muscle location from file
         
         INPUTS:
@@ -322,13 +325,13 @@ class features_T2(object):
         
         """
         ## Transform T2 img
-        loadDisplay = Display()
-        
-        # Proceed to build reference frame for display objects based on DICOM coords   
-        [t_T2image, transform_cube] = loadDisplay.dicomTransform(T2image, image_pos_pat, image_ori_pat)
-            
-        # Calculate the center of the volume
-        t_T2image.UpdateInformation() 
+#        loadDisplay = Display()
+#        
+#        # Proceed to build reference frame for display objects based on DICOM coords   
+#        [t_T2image, transform_cube] = loadDisplay.dicomTransform(T2image, image_pos_pat, image_ori_pat)
+#            
+#        # Calculate the center of the volume
+#        t_T2image.UpdateInformation() 
                
         print "\nBoxwidget placed..."
         #################################################################
@@ -356,7 +359,46 @@ class features_T2(object):
         # add to visualize        
         self.boxWidget.PlaceWidget( self.bounds_muscleSI )
         self.boxWidget.On()
+        #iren.Start() 
         
+        ############################# Do extract_muscleSI 
+        print "\n Re-extract muscle VOI? "
+        rexorNot=0
+        rexorNot = int(raw_input('type 1 to Re-extract or anykey: '))
+        
+        if rexorNot == 1:
+            # custom interaction
+            self.picker = picker
+            self.textMapper = vtk.vtkTextMapper()
+            tprop = self.textMapper.GetTextProperty()
+            tprop.SetFontFamilyToArial()
+            tprop.SetFontSize(10)
+            tprop.BoldOn()
+            tprop.ShadowOn()
+            tprop.SetColor(1, 0, 0)
+                    
+            self.textActor = vtk.vtkActor2D()
+            self.textActor.VisibilityOff() 
+            self.textActor.SetMapper(self.textMapper)
+            ren.AddActor2D(self.textActor)
+            picker.AddObserver("EndPickEvent", self.annotatePick)
+            iren.Start()        
+                    
+            # Construct a bounding box
+            bwidg = [0,0,0,0,0,0]     
+            bwidg[0] = self.pickPos[0]; bwidg[1] = self.pickPos[0]+5; 
+            bwidg[2] = self.pickPos[1]; bwidg[3] = self.pickPos[1]+5;
+            bwidg[4] = self.pickPos[2]; bwidg[5] = self.pickPos[2]+5;
+            self.bounds_muscleSI = bwidg
+            print "\nbounds_muscleSI "
+            print self.bounds_muscleSI
+            
+            self.boxWidget.PlaceWidget( self.bounds_muscleSI )
+            # turn off planes
+            xplane.Off()
+            yplane.Off()
+            self.boxWidget.On()            
+            
         ##########
         ### Set image stencil for muscle
         # create a simple box VOI mask shape using previously found boundsPlane_preselected
@@ -386,12 +428,13 @@ class features_T2(object):
         np_scalars = np_scalars.reshape(dims[2], dims[1], dims[0]) 
         np_scalars = np_scalars.transpose(2,1,0)
         muscleSI = np_scalars[np_scalars<5000]
-                
+        print "ave. T2_muscleSI: %d" % mean(muscleSI)
+        
         muscle_scalar_range = [muscleSI.min(), muscleSI.max()]
         print "\nMuscle scalar Range:"
         print muscle_scalar_range[0], muscle_scalar_range[1]
         
-        return muscleSI, muscle_scalar_range
+        return muscleSI, muscle_scalar_range, self.bounds_muscleSI
         
         
     def load_muscleSI_mha(self, T2image, image_pos_pat, image_ori_pat, m_bounds, iren):
@@ -479,7 +522,7 @@ class features_T2(object):
         return muscleSI, muscle_scalar_range, self.bounds_muscleSI
         
         
-    def extract_lesionSI(self, T2image, lesion3D, image_pos_pat, image_ori_pat, loadDisplay, pathSegment, nameSegment):
+    def extract_lesionSI(self, t_T2image, lesion3D, loadDisplay):
         """ extract_lesionSI: Use lesion segmentation to extract lesion SI
         
         INPUTS:
@@ -493,13 +536,13 @@ class features_T2(object):
         
         """
         ## Transform T2 img
-        loadDisplay = Display()
-        
-        # Proceed to build reference frame for display objects based on DICOM coords   
-        [t_T2image, transform_cube] = loadDisplay.dicomTransform(T2image, image_pos_pat, image_ori_pat)
-            
-        # Update info
-        t_T2image.UpdateInformation() 
+#        loadDisplay = Display()
+#        
+#        # Proceed to build reference frame for display objects based on DICOM coords   
+#        [t_T2image, transform_cube] = loadDisplay.dicomTransform(T2image, image_pos_pat, image_ori_pat)
+#            
+#        # Update info
+#        t_T2image.UpdateInformation() 
                 
         # create a simple box VOI mask shape using previously found boundsPlane_preselected
         VOIStencil = vtk.vtkROIStencilSource()
@@ -630,7 +673,7 @@ class features_T2(object):
         return np_scalars
         
         
-    def extractT2morphology(self, T2image, VOI_mesh, image_pos_pat, image_ori_pat):
+    def extractT2morphology(self, t_T2image, VOI_mesh):
         """ Start pixVals for collection pixel values at VOI """
         pixVals_margin = []; pixVals = []
         Fmargin = {}; voxel_frameS = {}
@@ -641,12 +684,12 @@ class features_T2(object):
         pco = [0,0,0]
         
         ## Transform T2 img
-        localloadDisplay = Display()
-        
-        # Proceed to build reference frame for display objects based on DICOM coords   
-        [t_T2image, transform_cube] = localloadDisplay.dicomTransform(T2image, image_pos_pat, image_ori_pat)
-        # Update info
-        t_T2image.UpdateInformation() 
+#        localloadDisplay = Display()
+#        
+#        # Proceed to build reference frame for display objects based on DICOM coords   
+#        [t_T2image, transform_cube] = localloadDisplay.dicomTransform(T2image, image_pos_pat, image_ori_pat)
+#        # Update info
+#        t_T2image.UpdateInformation() 
         
         # create mask from segmenation
         np_VOI_mask = self.createMaskfromMesh(VOI_mesh, t_T2image)
@@ -815,45 +858,52 @@ class features_T2(object):
         return self.morphologyT2Features
         
     
-    def extractT2texture(self, T2image, VOI_mesh, image_pos_pat, image_ori_pat):
+    def extractT2texture(self, t_T2image, image_pos_pat, image_ori_pat, VOI_mesh, patchdirname):
         ################################### 
         # Haralick et al. defined 10 grey-level co-occurrence matrix (GLCM) enhancement features 
-        # (energy, maximum probability, contrast, homogeneity, entropy, correlation, sum average, sum variance, difference average and difference variance) to describe texture
-        # For both mass and non-mass lesions
-        averg_texture_contrast=array([0,0,0,0]).reshape(1,4)    
-        averg_texture_homogeneity=array([0,0,0,0]).reshape(1,4)
-        averg_texture_dissimilarity=array([0,0,0,0]).reshape(1,4)
-        averg_texture_correlation=array([0,0,0,0]).reshape(1,4)
-        averg_texture_ASM=array([0,0,0,0]).reshape(1,4)
-        averg_texture_energy=array([0,0,0,0]).reshape(1,4)
-        
-        # N is the number of distinct gray levels in the histogram equalized image;
-        # obtain vols of interest
+        # 3D textrue features
+#        self = funcD
+#        T2image = self.load.T2Images
+#        image_pos_pat = self.load.T2image_pos_pat
+#        image_ori_pat = self.load.T2image_ori_pat
+#        VOI_mesh = funcD.lesion3D
+#        loadDisplay = funcD.loadDisplay
         ## Transform T2 img
-        localloadDisplay = Display()
+        #localloadDisplay = Display()
         
         # Proceed to build reference frame for display objects based on DICOM coords   
-        [t_T2image, transform_cube] = localloadDisplay.dicomTransform(T2image, image_pos_pat, image_ori_pat)
+        #[t_T2image, transform_cube] = loadDisplay.dicomTransform(T2image, image_pos_pat, image_ori_pat)
         # Update info
         t_T2image.UpdateInformation() 
         
         print "\nLoading VOI_mesh MASK... "
         VOIPnt = [0,0,0]; pixVals_margin = [];  pixVals = []
             
-        #################### HERE GET INTERNAL PIXELS IT AND MASK IT OUT
+        #################### TO NUMPY
         VOI_scalars = t_T2image.GetPointData().GetScalars()
-        np_VOI_imagedata = vtk_to_numpy(VOI_scalars)     
-        
+        np_VOI_imagedata = vtk_to_numpy(VOI_scalars)
+
         dims = t_T2image.GetDimensions()
         spacing = t_T2image.GetSpacing()
-        np_VOI_imagedata = np_VOI_imagedata.reshape(dims[2], dims[1], dims[0]) 
+        np_VOI_imagedata = np_VOI_imagedata.reshape(dims[2], dims[1], dims[0])
         np_VOI_imagedata = array(np_VOI_imagedata.transpose(2,1,0))
+
+        #****************************"
+        print "Normalizing data..."
+        np_VOI_imagedataflat = np_VOI_imagedata.flatten().astype(float)
+        np_VOI_imagedata_num = (np_VOI_imagedataflat-min(np_VOI_imagedataflat))
+        np_VOI_imagedata_den = (max(np_VOI_imagedataflat)-min(np_VOI_imagedataflat))
+        np_VOI_imagedata_flatten = 255*(np_VOI_imagedata_num/np_VOI_imagedata_den)
+        np_VOI_imagedata = np_VOI_imagedata_flatten.reshape(dims[0], dims[1], dims[2])
         
         # Prepare lesion localization and PATCH size for Texture analysis    
         # lesion_centroid        
         lesionBox = VOI_mesh.GetBounds()
+        self.boxWidget.PlaceWidget( lesionBox )
+        self.boxWidget.On()
+        
         deltax = lesionBox[1] - lesionBox[0]
-        print deltax 
+        print deltax
         deltay = lesionBox[3]-lesionBox[2]
         print  deltay
         deltaz = lesionBox[5]-lesionBox[4]
@@ -861,21 +911,14 @@ class features_T2(object):
         
         # find largest dimension and use that for lesion radius
         if deltax > deltay:
-            if deltax > deltaz:
-                lesion_dia = deltax 
-                print "deltax was largest %d... " % lesion_dia
-            else: 
-                lesion_dia = deltaz
-                print "deltaz was largest %d... " % lesion_dia
-        else:
-            if deltay > deltaz:
-                lesion_dia = deltay
-                print "deltay was largest %d... " % lesion_dia
-            else:
-                lesion_dia = deltaz
-                print "deltaz was largest %d... " % lesion_dia
-              
+            lesion_dia = deltax/spacing[0] 
+            print "deltax was largest %d... " % lesion_dia
+        else: 
+            lesion_dia = deltay/spacing[1]
+            print "deltay was largest %d... " % lesion_dia
+             
         lesion_radius = lesion_dia/2
+        lesionthick = deltaz/spacing[2]/2
         print "VOI_efect_diameter %s... " % str(lesion_radius)
         
         lesion_location = VOI_mesh.GetCenter()
@@ -896,131 +939,180 @@ class features_T2(object):
         print ijk
         ijk_vtk = ijk
         
-        ##normalize the whole 3D image first to [0 255] and then change the type to uint8. The normalization can be done simply by:
-        # round((img-min(img))/(max(img)-min(img))*255)
-        #****************************"
-        print "Normalizing data..."
-        np_VOI_imagedataflat = np_VOI_imagedata.flatten().astype(float)
-        np_VOI_imagedata_num = (np_VOI_imagedataflat-min(np_VOI_imagedataflat))
-        np_VOI_imagedata_den = (max(np_VOI_imagedataflat)-min(np_VOI_imagedataflat))
-        np_VOI_imagedata_flatten = 255*(np_VOI_imagedata_num/np_VOI_imagedata_den)
-        np_VOI_imagedata_norm = np_VOI_imagedata_flatten.reshape(dims[0], dims[1], dims[2])
-        print np_VOI_imagedata_norm
-        
-        # compute texture cdf        
-        eq_numpy_pre_VOI_imagedata, cdf = self.histeq(np_VOI_imagedata_norm[:,:,int(ijk_vtk[2])])    
-        plt.figure()
-        plt.subplot(231)
-        n, bins, patches = plt.hist(array(np_VOI_imagedata_norm[:,:,int(ijk_vtk[2])].flatten()), 50, normed=1, facecolor='green', alpha=0.75)
-        
-        plt.subplot(233)
-        n, bins, patches = plt.hist(array(eq_numpy_pre_VOI_imagedata.flatten()), 50, normed=1, facecolor='green', alpha=0.75)
-         
-        plt.subplot(234)
-        plt.imshow(np_VOI_imagedata_norm[:,:,int(ijk_vtk[2])])
-        plt.gray()
-        
-        plt.subplot(236)
-        plt.imshow(eq_numpy_pre_VOI_imagedata)
-        plt.gray()
-        
-        # FInally display
-        plt.show()
-        
-        #****************************"
-        # Do histogram cast
-        # Do only VOI histo equ
-        eq_numpy_pre_VOI_imagedata, cdf = self.histeq(np_VOI_imagedata_norm[:,:,int(ijk_vtk[2])])
-        
-        # Get the shape of the numpy image data to confirm dimensions
-        eq_numpy_pre_VOI_imagedata = eq_numpy_pre_VOI_imagedata.reshape(dims[0], dims[1], 1)
-        
         # Perform texture classification using grey level co-occurrence matrices (GLCMs).
         # A GLCM is a histogram of co-occurring greyscale values at a given offset over an image.
         # compute some GLCM properties each patch
-        # p(i,j) is the (i,j)th entry in a normalized spatial gray-level dependence matrix; 
-        lesion_patches = []
-        lesion_patches = np_VOI_imagedata_norm[
-                int(ijk_vtk[0] - lesion_radius):int(ijk_vtk[0] + lesion_radius),
-                int(ijk_vtk[1] - lesion_radius):int(ijk_vtk[1] + lesion_radius),
-                int(ijk_vtk[2])]
-        
-        patches_shape = lesion_patches.shape
-                            
-        for k in range(patches_shape[0]):
-            for l in range(patches_shape[1]):
-                if (lesion_patches[k,l] < 0):
-                    lesion_patches[k,l] = 0
-        
+        # p(i,j) is the (i,j)th entry in a normalized spatial gray-level dependence matrix;
+        lesion_patches = np_VOI_imagedata[
+                int(ijk_vtk[0] - lesion_radius-1):int(ijk_vtk[0] + lesion_radius+1),
+                int(ijk_vtk[1] - lesion_radius-1):int(ijk_vtk[1] + lesion_radius),
+                int(ijk_vtk[2] - lesionthick/2-1):int(ijk_vtk[2] + lesionthick/2+1) ]
+
         print '\n Lesion_patches:'
         print lesion_patches
+        
+        #################### RESAMPLE TO ISOTROPIC
+        # pass to vtk
+        lesion_patches_shape = lesion_patches.shape
+        vtklesion_patches = lesion_patches.transpose(2,1,0)
+        vtklesion_patches_data = numpy_to_vtk(num_array=vtklesion_patches.ravel(), deep=True, array_type=vtk.VTK_FLOAT)
 
-        #skimage.feature.greycomatrix(image, distances, angles, levels=256, symmetric=False, normed=False)
-        glcm = greycomatrix(lesion_patches, [3], [0, 45*pi/180, 90*pi/180, 135*pi/180], 256, symmetric=True, normed=True)
-        texture_contrast = greycoprops(glcm, 'contrast')
-        texture_homogeneity = greycoprops(glcm, 'homogeneity')
-        texture_dissimilarity = greycoprops(glcm, 'dissimilarity')
-        texture_correlation = greycoprops(glcm, 'correlation')
-        texture_ASM = greycoprops(glcm, 'ASM')
-        texture_energy = greycoprops(glcm, 'energy')
-    
-        # display the image patches
-        plt.subplot(3, len(lesion_patches), len(lesion_patches) * 1 )
-        plt.imshow(lesion_patches, cmap=plt.cm.gray, interpolation='nearest',
-               vmin=0, vmax=255)
-        plt.xlabel('lesion_patches')
-        
-        # display original image with locations of patches
-        plt.subplot(3, 2, 1)
-        plt.imshow(np_VOI_imagedata_norm[:,:,int(ijk_vtk[2])] , cmap=plt.cm.gray, interpolation='nearest',
-               vmin=0, vmax=255)
-        # Plot
-        # create the figure
-        plt.plot(ijk_vtk[0] - lesion_radius/2, ijk_vtk[1] - lesion_radius/2, 'gs')
-        plt.xlabel('Original Image')
-        plt.xticks([])
-        plt.yticks([])
-        plt.axis('image')
-        
+        # probe into the unstructured grid using ImageData geometry
+        vtklesion_patches = vtk.vtkImageData()
+        vtklesion_patches.SetExtent(0,lesion_patches_shape[0]-1,0,lesion_patches_shape[1]-1,0,lesion_patches_shape[2]-1)
+        vtklesion_patches.SetOrigin(0,0,0)
+        vtklesion_patches.SetSpacing(spacing)
+        vtklesion_patches.GetPointData().SetScalars(vtklesion_patches_data)
+
+        # write ####################
+        isowriter = vtk.vtkMetaImageWriter()
+        isowriter.SetInput(vtklesion_patches)
+        isowriter.SetFileName(patchdirname+"_T2w.mha")
+        isowriter.Write()
+
+        isopix = mean(vtklesion_patches.GetSpacing())
+        resample = vtk.vtkImageResample ()
+        resample.SetInput( vtklesion_patches )
+        resample.SetAxisOutputSpacing( 0, isopix )
+        resample.SetAxisOutputSpacing( 1, isopix )
+        resample.SetAxisOutputSpacing( 2, isopix )
+        resample.Update()
+        isoImage = resample.GetOutput()
+
+        #################### get isotropic patches
+        ISO_scalars = isoImage.GetPointData().GetScalars()
+        np_ISO_Image = vtk_to_numpy(ISO_scalars)
+
+        isodims = isoImage.GetDimensions()
+        isospacing = isoImage.GetSpacing()
+        np_ISO_Imagedata = np_ISO_Image.reshape(isodims[2], isodims[1], isodims[0])
+        np_ISO_Imagedata = array(np_ISO_Imagedata.transpose(2,1,0))
+
+        #################### save isotropic patches
+        fig = plt.figure()
+        # patch histogram
+        ax1 = fig.add_subplot(221)
+        n, bins, patches = plt.hist(array(np_ISO_Imagedata.flatten()), 50, normed=1, facecolor='green', alpha=0.75)
+        ax1.set_ylabel('histo')
+
+        ax2 = fig.add_subplot(222)
+        plt.imshow(np_ISO_Imagedata[:,:,np_ISO_Imagedata.shape[2]/2])
+        plt.gray()
+        ax2.set_ylabel('iso: '+str(isodims) )
+
+        ax3 = fig.add_subplot(223)
+        plt.imshow(lesion_patches[:,:,lesion_patches.shape[2]/2])
+        plt.gray()
+        ax3.set_ylabel('original: '+str(lesion_patches_shape))
+
+        ax4 = fig.add_subplot(224)
+        plt.imshow(np_VOI_imagedata[:,:,ijk_vtk[2]])
+        plt.gray()
+        ax4.set_ylabel('lesion centroid(ijk): '+str(ijk_vtk))
+
         # FInally display
-        plt.show() 
+        # plt.show()
+        plt.savefig(patchdirname+'_T2w.png', format='png')
+        ####################
+
+        #################### 3D GLCM
+        from graycomatrix3D import glcm3d
+
+        patch = np_ISO_Imagedata.astype(np.uint8)
+        lev = int(patch.max()+1) # levels
+        
+        # perfor glmc extraction in all 13 directions in 3D pixel neighbors
+        g1 = glcm3d(lev, patch, offsets=[0,0,1])  # orientation 0 degrees (example same slices: equal to Nslices*0degree 2D case)
+        g2 = glcm3d(lev, patch, offsets=[0,1,-1]) # orientation 45 degrees (example same slices: equal to Nslices*45degree 2D case)
+        g3 = glcm3d(lev, patch, offsets=[0,1,0]) # orientation 90 degrees (example same slices: equal to Nslices*90degree 2D case)
+        g4 = glcm3d(lev, patch, offsets=[0,1,1]) # orientation 135 degrees (example same slices: equal to Nslices*135degree 2D case)
+        g5 = glcm3d(lev, patch, offsets=[1,0,-1]) # 0 degrees/45 degrees (example same slices: equal to (Nslices-1)*0degree 2D case)
+        g6 = glcm3d(lev, patch, offsets=[1,0,0])  # straight up (example same slices: equal to np.unique())
+        g7 = glcm3d(lev, patch, offsets=[1,0,1]) # 0 degree/135 degrees (example same slices: equal to (Nslices-1)*transpose of 0degree 2D case)
+        g8 = glcm3d(lev, patch, offsets=[1,1,0]) # 90 degrees/45 degrees (example same slices: equal to (Nslices-1)*90 degree 2D case)
+        g9 = glcm3d(lev, patch, offsets=[1,-1,0])    # 90 degrees/135 degrees (example same slices: equal to (Nslices-1)*transpose of 90 degree 2D case)
+        g10 = glcm3d(lev, patch, offsets=[1,1,-1])    # 45 degrees/45 degrees (example same slices: equal to (Nslices-1)*45 degree 2D case)
+        g11 = glcm3d(lev, patch, offsets=[1,-1,1])   # 45 degree/135 degrees (example same slices: equal to (Nslices-1)*transpose of 45 degree 2D case)
+        g12 = glcm3d(lev, patch, offsets=[1,1,1])    # 135 degrees/45 degrees (example same slices: equal to (Nslices-1)*135 degree 2D case)
+        g13 = glcm3d(lev, patch, offsets=[0,0,1])    # 135 degrees/135 degrees (example same slices: equal to (Nslices-1)*transpose of 135 degree 2D case)
+
+        # plot                
+        fig = plt.figure()
+        fig.add_subplot(431);           plt.imshow(g1); plt.gray()
+        fig.add_subplot(432);           plt.imshow(g2); plt.gray()
+        fig.add_subplot(433);           plt.imshow(g3); plt.gray()
+        fig.add_subplot(434);           plt.imshow(g4); plt.gray()
+        fig.add_subplot(435);           plt.imshow(g5); plt.gray()
+        fig.add_subplot(436);           plt.imshow(g6); plt.gray()
+        fig.add_subplot(437);           plt.imshow(g7); plt.gray()
+        fig.add_subplot(438);           plt.imshow(g8); plt.gray()
+    
+        # add all directions to make features non-directional
+        g = g1+g2+g3+g4+g5+g6+g7+g8+g9+g10+g11+g12+g13
+    
+        fig.add_subplot(439);           plt.imshow(g); plt.gray()
+        #plt.show()
+        
+        ### glcm normalization ###
+        if g.sum() != 0:
+            g = g.astype(float)/g.sum()
+        
+        ### compute auxiliary variables ###
+        (num_level, num_level2) = g.shape
+        I, J = np.ogrid[0:num_level, 0:num_level]
+        I = 1+ np.array(range(num_level)).reshape((num_level, 1))
+        J = 1+ np.array(range(num_level)).reshape((1, num_level))
+        diff_i = I - np.apply_over_axes(np.sum, (I * g), axes=(0, 1))[0, 0]
+        diff_j = J - np.apply_over_axes(np.sum, (J * g), axes=(0, 1))[0, 0]
+        std_i = np.sqrt(np.apply_over_axes(np.sum, (g * (diff_i) ** 2),axes=(0, 1))[0, 0])
+        std_j = np.sqrt(np.apply_over_axes(np.sum, (g * (diff_j) ** 2),axes=(0, 1))[0, 0])
+        cov = np.apply_over_axes(np.sum, (g * (diff_i * diff_j)),axes=(0, 1))[0, 0]
+        
+        gxy = np.zeros(2*g.shape[0]-1)   ### g x+y
+        gx_y = np.zeros(g.shape[0])  ### g x-y
+        for i in xrange(g.shape[0]):
+            for j in xrange(g.shape[0]):
+                gxy[i+j] += g[i,j]
+                gx_y[np.abs(i-j)] += g[i,j]
+        
+        mx_y = (gx_y*np.arange(len(gx_y))).sum()
+        v = np.zeros(11)
+        i,j = np.indices(g.shape)+1
+        ii = np.arange(len(gxy))+2
+        ii_ = np.arange(len(gx_y))
+        
+        ### compute descriptors ###
+        v[0] = np.apply_over_axes(np.sum, (g ** 2), axes=(0, 1))[0, 0] # energy or Angular second moment
+        v[1] = np.apply_over_axes(np.sum, (g * ((I - J) ** 2)), axes=(0, 1))[0, 0] # Contrast
+        if std_i>1e-15 and std_j>1e-15: # handle the special case of standard deviations near zero
+            v[2] = cov/(std_i*std_j)#v[2] = greycoprops(g,'correlation') # Correlation
+        else:
+            v[2] = 1
+        v[3] = np.apply_over_axes(np.sum, (g* (diff_i) ** 2),axes=(0, 1))[0, 0]# Variance or Sum of squares
+        v[4] = np.sum(g * (1. / (1. + (I - J) ** 2))) # Inverse difference moment
+        v[5] = (gxy*ii).sum() # Sum average
+        v[6] = ((ii-v[5])*(ii-v[5])*gxy).sum() # Sum variance
+        v[7] = -1*(gxy*np.log10(gxy+ np.spacing(1))).sum() # Sum entropy
+        v[8] = -1*(g*np.log10(g+np.spacing(1))).sum() # Entropy
+        v[9] = ((ii_-mx_y)*(ii_-mx_y)*gx_y).sum() # Difference variance
+        v[10] = -1*(gx_y*np.log10(gx_y++np.spacing(1))).sum() # Difference entropy
             
         # writing to file from row_lesionID Drow_PathRepID
-        print "\n Average texture features for each orientation"
-        contrast = texture_contrast
-        print contrast
-        [self.contrast_zero, self.contrast_quarterRad, self.contrast_halfRad, self.contrast_halfRad] =  contrast[0,0], contrast[0,1], contrast[0,2], contrast[0,3]
-        
-        homogeneity = texture_homogeneity
-        print homogeneity                
-        [self.homogeneity_zero, self.homogeneity_quarterRad, self.homogeneity_halfRad, self.homogeneity_threeQuaRad] = homogeneity[0,0], homogeneity[0,1], homogeneity[0,2], homogeneity[0,3]
-
-        dissimilarity =texture_dissimilarity
-        print dissimilarity                
-        [self.dissimilarity_zero, self.dissimilarity_quarterRad, self.dissimilarity_halfRad, self.dissimilarity_threeQuaRad] = dissimilarity[0,0], dissimilarity[0,1], dissimilarity[0,2], dissimilarity[0,3]
-        
-        correlation = texture_correlation
-        print correlation  
-        [self.correlation_zero, self.correlation_quarterRad, self.correlation_halfRad, self.correlation_threeQuaRad] = correlation[0,0], correlation[0,1], correlation[0,2], correlation[0,3]
-        
-        ASM = texture_ASM
-        print ASM  
-        [self.ASM_zero, self.ASM_quarterRad, self.ASM_halfRad, self.ASM_threeQuaRad] = ASM[0,0], ASM[0,1], ASM[0,2], ASM[0,3]
-        
-        energy = texture_energy
-        print energy  
-        [self.energy_zero, self.energy_quarterRad, self.energy_halfRad, self.energy_threeQuaRad] = energy[0,0], energy[0,1], energy[0,2], energy[0,3]
-
+        ##################################################
+        # writing to file from row_lesionID Drow_PathRepID
+        print "\n Append texture features for each post contrast"
+        [self.T2texture_energy_nondir, self.T2texture_contrast_nondir, self.T2texture_correlation_nondir,
+         self.T2texture_variance_nondir, self.T2texture_inversediffmoment_nondir, self.T2texture_sumaverage_nondir,
+         self.T2texture_sumvariance_nondir, self.T2texture_sumentropy_nondir, self.T2texture_entropy_nondir,
+         self.T2texture_diffvariance_nondir,self.T2texture_diffentropy_nondir] = v
               
         ##################################################
         # orgamize into dataframe
-        self.textureT2Features = DataFrame( data=array([[ self.contrast_zero, self.contrast_quarterRad, self.contrast_halfRad, self.contrast_halfRad, 
-                                                   self.homogeneity_zero, self.homogeneity_quarterRad, self.homogeneity_halfRad, self.homogeneity_threeQuaRad,
-                                                   self.dissimilarity_zero, self.dissimilarity_quarterRad, self.dissimilarity_halfRad, self.dissimilarity_threeQuaRad,
-                                                   self.correlation_zero, self.correlation_quarterRad, self.correlation_halfRad, self.correlation_threeQuaRad,
-                                                   self.ASM_zero, self.ASM_quarterRad, self.ASM_halfRad, self.ASM_threeQuaRad,
-                                                   self.energy_zero, self.energy_quarterRad, self.energy_halfRad, self.energy_threeQuaRad ]]), 
-        columns=['T2texture_contrast_zero', 'T2texture_contrast_quarterRad', 'T2texture_contrast_halfRad', 'T2texture_contrast_threeQuaRad', 'T2texture_homogeneity_zero', 'T2texture_homogeneity_quarterRad', 'T2texture_homogeneity_halfRad', 'T2texture_homogeneity_threeQuaRad', 'T2texture_dissimilarity_zero', 'T2texture_dissimilarity_quarterRad', 'T2texture_dissimilarity_halfRad', 'T2texture_dissimilarity_threeQuaRad', 'T2texture_correlation_zero', 'T2texture_correlation_quarterRad', 'T2texture_correlation_halfRad', 'T2texture_correlation_threeQuaRad', 'T2texture_ASM_zero', 'T2texture_ASM_quarterRad', 'T2texture_ASM_halfRad', 'T2texture_ASM_threeQuaRad', 'T2texture_energy_zero', 'T2texture_energy_quarterRad', 'T2texture_energy_halfRad', 'T2texture_energy_threeQuaRad'])
-
+        self.textureT2Features = DataFrame( data=array([[ self.T2texture_energy_nondir, self.T2texture_contrast_nondir, self.T2texture_correlation_nondir,
+         self.T2texture_variance_nondir, self.T2texture_inversediffmoment_nondir, self.T2texture_sumaverage_nondir,
+         self.T2texture_sumvariance_nondir, self.T2texture_sumentropy_nondir, self.T2texture_entropy_nondir,
+         self.T2texture_diffvariance_nondir,self.T2texture_diffentropy_nondir ]]), 
+        columns=['texture_energy_nondir','texture_contrast_nondir','texture_correlation_nondir', 'texture_variance_nondir', 'texture_inversediffmoment_nondir', 'texture_sumaverage_nondir', 'texture_sumvariance_nondir', 
+                     'texture_sumentropy_nondir', 'texture_entropy_nondir', 'texture_diffvariance_nondir', 'texture_diffentropy_nondir'])
 
         return self.textureT2Features
